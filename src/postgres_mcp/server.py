@@ -624,17 +624,10 @@ async def main():
     allowed_hosts_env = os.environ.get("POSTGRES_MCP_ALLOWED_HOSTS")
     allowed_origins_env = os.environ.get("POSTGRES_MCP_ALLOWED_ORIGINS")
 
-    dns_protection_disabled = (
-        dns_protection_env.lower() == "false" if dns_protection_env is not None
-        else args.disable_dns_rebinding_protection
-    )
-    allowed_hosts: list[str] | None = (
-        [h.strip() for h in allowed_hosts_env.split(",")] if allowed_hosts_env is not None
-        else args.allowed_hosts
-    )
+    dns_protection_disabled = dns_protection_env.lower() == "false" if dns_protection_env is not None else args.disable_dns_rebinding_protection
+    allowed_hosts: list[str] | None = [h.strip() for h in allowed_hosts_env.split(",")] if allowed_hosts_env is not None else args.allowed_hosts
     allowed_origins: list[str] | None = (
-        [o.strip() for o in allowed_origins_env.split(",")] if allowed_origins_env is not None
-        else args.allowed_origins
+        [o.strip() for o in allowed_origins_env.split(",")] if allowed_origins_env is not None else args.allowed_origins
     )
 
     if dns_protection_disabled:
