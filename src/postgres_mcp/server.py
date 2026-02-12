@@ -580,9 +580,11 @@ def resolve_dns_protection_enabled(env_value: str | None, cli_disable_flag: bool
 
 def parse_comma_separated(*values: str | None) -> list[str] | None:
     for value in values:
-        if value is not None:
-            parsed = [item.strip() for item in value.split(",") if item.strip()]
-            return parsed or None
+        if value is None or not value.strip():
+            continue
+        parsed = [item.strip() for item in value.split(",") if item.strip()]
+        if parsed:
+            return parsed
     return None
 
 

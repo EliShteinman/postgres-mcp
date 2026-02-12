@@ -59,13 +59,19 @@ class TestParseCommaSeparated:
     def test_empty_entries_filtered(self):
         assert parse_comma_separated("host1,,host2,") == ["host1", "host2"]
 
-    def test_all_empty_entries_returns_none(self):
-        assert parse_comma_separated(",,") is None
+    def test_all_empty_entries_falls_through(self):
+        assert parse_comma_separated(",,", "fallback") == ["fallback"]
 
-    def test_empty_string_returns_none(self):
+    def test_empty_string_falls_through(self):
+        assert parse_comma_separated("", "fallback") == ["fallback"]
+
+    def test_whitespace_only_falls_through(self):
+        assert parse_comma_separated("  ", "fallback") == ["fallback"]
+
+    def test_empty_without_fallback_returns_none(self):
         assert parse_comma_separated("") is None
 
-    def test_first_non_none_wins(self):
+    def test_first_non_empty_wins(self):
         assert parse_comma_separated("env-host", "cli-host") == ["env-host"]
 
     def test_skips_none_to_fallback(self):
