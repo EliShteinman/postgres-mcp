@@ -276,6 +276,34 @@ For Windsurf, the format in `mcp_config.json` is slightly different:
 }
 ```
 
+## Transport Security
+
+When using SSE or Streamable HTTP transports, DNS rebinding protection is handled by the MCP framework by default (enabled for localhost).
+You can override it using CLI flags or environment variables (env vars take precedence over CLI flags).
+
+| CLI Flag | Environment Variable | Description |
+|----------|---------------------|-------------|
+| `--disable-dns-rebinding-protection` | `POSTGRES_MCP_DNS_REBINDING_PROTECTION` | [DNS rebinding](https://github.com/modelcontextprotocol/python-sdk/blob/main/src/mcp/server/transport_security.py) protection. Set to `false`/`0`/`no` to disable, `true` to enable |
+| `--allowed-hosts <hosts>` | `POSTGRES_MCP_ALLOWED_HOSTS` | Comma-separated list of accepted Host header values |
+| `--allowed-origins <origins>` | `POSTGRES_MCP_ALLOWED_ORIGINS` | Comma-separated list of accepted Origin header values |
+
+For example, to allow a custom gateway host:
+
+```bash
+postgres-mcp --transport=sse \
+  --allowed-hosts 'localhost:*,my-gateway:8080' \
+  --allowed-origins 'http://localhost:*,http://my-gateway:*' \
+  "postgresql://username:password@localhost:5432/dbname"
+```
+
+Or using environment variables:
+
+```bash
+POSTGRES_MCP_ALLOWED_HOSTS="localhost:*,my-gateway:8080" \
+POSTGRES_MCP_ALLOWED_ORIGINS="http://localhost:*,http://my-gateway:*" \
+  postgres-mcp --transport=sse "postgresql://username:password@localhost:5432/dbname"
+```
+
 ## Postgres Extension Installation (Optional)
 
 To enable index tuning and comprehensive performance analysis you need to load the `pg_stat_statements` and `hypopg` extensions on your database.
