@@ -43,6 +43,11 @@ class TestResolveDnsProtectionEnabled:
     def test_whitespace_trimmed(self):
         assert resolve_dns_protection_enabled("  false  ", cli_disable_flag=False) is False
 
+    @pytest.mark.parametrize("value", ["", "  ", "\t"])
+    def test_empty_or_whitespace_treated_as_unset(self, value: str):
+        assert resolve_dns_protection_enabled(value, cli_disable_flag=False) is True
+        assert resolve_dns_protection_enabled(value, cli_disable_flag=True) is False
+
 
 class TestParseCommaSeparated:
     def test_comma_separated_values(self):

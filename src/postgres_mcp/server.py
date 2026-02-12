@@ -569,7 +569,7 @@ def parse_bool_env(value: str) -> bool | None:
 
 
 def resolve_dns_protection_enabled(env_value: str | None, cli_disable_flag: bool) -> bool:
-    if env_value is None:
+    if env_value is None or not env_value.strip():
         return not cli_disable_flag
     parsed = parse_bool_env(env_value)
     if parsed is None:
