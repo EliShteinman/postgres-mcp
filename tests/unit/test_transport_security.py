@@ -87,6 +87,13 @@ class TestParseCommaSeparated:
         assert parse_comma_separated("host1, , ,host2") == ["host1", "host2"]
 
 
+_TRANSPORT_MOCK_MAP = {
+    "sse": "postgres_mcp.server.mcp.run_sse_async",
+    "streamable-http": "postgres_mcp.server.mcp.run_streamable_http_async",
+}
+
+
+@pytest.mark.parametrize("transport", ["sse", "streamable-http"])
 class TestTransportSecurityIntegration:
     @pytest.fixture(autouse=True)
     def _preserve_mcp_state(self):
@@ -99,40 +106,40 @@ class TestTransportSecurityIntegration:
         mcp.settings.transport_security = original_security
 
     @pytest.mark.asyncio
-    async def test_disable_dns_rebinding_via_cli_flag(self):
+    async def test_disable_dns_rebinding_via_cli_flag(self, transport: str):
         from postgres_mcp.server import main
         from postgres_mcp.server import mcp
 
         sys.argv = [
             "postgres_mcp",
             "postgresql://user:password@localhost/db",
-            "--transport=sse",
+            f"--transport={transport}",
             "--disable-dns-rebinding-protection",
         ]
 
         with (
             patch("postgres_mcp.server.db_connection.pool_connect", AsyncMock()),
-            patch("postgres_mcp.server.mcp.run_sse_async", AsyncMock()),
+            patch(_TRANSPORT_MOCK_MAP[transport], AsyncMock()),
         ):
             await main()
             assert mcp.settings.transport_security is not None
             assert mcp.settings.transport_security.enable_dns_rebinding_protection is False
 
     @pytest.mark.asyncio
-    async def test_env_var_overrides_cli_disable_flag(self):
+    async def test_env_var_overrides_cli_disable_flag(self, transport: str):
         from postgres_mcp.server import main
         from postgres_mcp.server import mcp
 
         sys.argv = [
             "postgres_mcp",
             "postgresql://user:password@localhost/db",
-            "--transport=sse",
+            f"--transport={transport}",
             "--disable-dns-rebinding-protection",
         ]
 
         with (
             patch("postgres_mcp.server.db_connection.pool_connect", AsyncMock()),
-            patch("postgres_mcp.server.mcp.run_sse_async", AsyncMock()),
+            patch(_TRANSPORT_MOCK_MAP[transport], AsyncMock()),
             patch.dict("os.environ", {"POSTGRES_MCP_DNS_REBINDING_PROTECTION": "true"}),
         ):
             await main()
@@ -140,21 +147,21 @@ class TestTransportSecurityIntegration:
             assert mcp.settings.transport_security.enable_dns_rebinding_protection is True
 
     @pytest.mark.asyncio
-    async def test_allowed_hosts_via_cli(self):
+    async def test_allowed_hosts_via_cli(self, transport: str):
         from postgres_mcp.server import main
         from postgres_mcp.server import mcp
 
         sys.argv = [
             "postgres_mcp",
             "postgresql://user:password@localhost/db",
-            "--transport=sse",
+            f"--transport={transport}",
             "--allowed-hosts",
             "localhost:*,127.0.0.1:*",
         ]
 
         with (
             patch("postgres_mcp.server.db_connection.pool_connect", AsyncMock()),
-            patch("postgres_mcp.server.mcp.run_sse_async", AsyncMock()),
+            patch(_TRANSPORT_MOCK_MAP[transport], AsyncMock()),
         ):
             await main()
             assert mcp.settings.transport_security is not None
@@ -163,21 +170,21 @@ class TestTransportSecurityIntegration:
             assert "127.0.0.1:*" in mcp.settings.transport_security.allowed_hosts
 
     @pytest.mark.asyncio
-    async def test_allowed_hosts_env_overrides_cli(self):
+    async def test_allowed_hosts_env_overrides_cli(self, transport: str):
         from postgres_mcp.server import main
         from postgres_mcp.server import mcp
 
         sys.argv = [
             "postgres_mcp",
             "postgresql://user:password@localhost/db",
-            "--transport=sse",
+            f"--transport={transport}",
             "--allowed-hosts",
             "cli-host:*",
         ]
 
         with (
             patch("postgres_mcp.server.db_connection.pool_connect", AsyncMock()),
-            patch("postgres_mcp.server.mcp.run_sse_async", AsyncMock()),
+            patch(_TRANSPORT_MOCK_MAP[transport], AsyncMock()),
             patch.dict("os.environ", {"POSTGRES_MCP_ALLOWED_HOSTS": "env-host:*"}),
         ):
             await main()
@@ -186,40 +193,40 @@ class TestTransportSecurityIntegration:
             assert "cli-host:*" not in mcp.settings.transport_security.allowed_hosts
 
     @pytest.mark.asyncio
-    async def test_default_dns_protection_active(self):
+    async def test_default_dns_protection_active(self, transport: str):
         from postgres_mcp.server import main
         from postgres_mcp.server import mcp
 
         sys.argv = [
             "postgres_mcp",
             "postgresql://user:password@localhost/db",
-            "--transport=sse",
+            f"--transport={transport}",
         ]
 
         with (
             patch("postgres_mcp.server.db_connection.pool_connect", AsyncMock()),
-            patch("postgres_mcp.server.mcp.run_sse_async", AsyncMock()),
+            patch(_TRANSPORT_MOCK_MAP[transport], AsyncMock()),
         ):
             await main()
             assert mcp.settings.transport_security is not None
             assert mcp.settings.transport_security.enable_dns_rebinding_protection is True
 
     @pytest.mark.asyncio
-    async def test_only_allowed_origins_without_hosts(self):
+    async def test_only_allowed_origins_without_hosts(self, transport: str):
         from postgres_mcp.server import main
         from postgres_mcp.server import mcp
 
         sys.argv = [
             "postgres_mcp",
             "postgresql://user:password@localhost/db",
-            "--transport=sse",
+            f"--transport={transport}",
             "--allowed-origins",
             "http://localhost:*",
         ]
 
         with (
             patch("postgres_mcp.server.db_connection.pool_connect", AsyncMock()),
-            patch("postgres_mcp.server.mcp.run_sse_async", AsyncMock()),
+            patch(_TRANSPORT_MOCK_MAP[transport], AsyncMock()),
         ):
             await main()
             assert mcp.settings.transport_security is not None
@@ -227,14 +234,14 @@ class TestTransportSecurityIntegration:
             assert "http://localhost:*" in mcp.settings.transport_security.allowed_origins
 
     @pytest.mark.asyncio
-    async def test_disable_flag_ignores_allowed_hosts_with_warning(self, caplog):
+    async def test_disable_flag_ignores_allowed_hosts_with_warning(self, transport: str, caplog: pytest.LogCaptureFixture):
         from postgres_mcp.server import main
         from postgres_mcp.server import mcp
 
         sys.argv = [
             "postgres_mcp",
             "postgresql://user:password@localhost/db",
-            "--transport=sse",
+            f"--transport={transport}",
             "--disable-dns-rebinding-protection",
             "--allowed-hosts",
             "localhost:*",
@@ -243,7 +250,7 @@ class TestTransportSecurityIntegration:
         with (
             caplog.at_level(logging.WARNING, logger="postgres_mcp.server"),
             patch("postgres_mcp.server.db_connection.pool_connect", AsyncMock()),
-            patch("postgres_mcp.server.mcp.run_sse_async", AsyncMock()),
+            patch(_TRANSPORT_MOCK_MAP[transport], AsyncMock()),
         ):
             await main()
             assert mcp.settings.transport_security is not None
@@ -251,13 +258,13 @@ class TestTransportSecurityIntegration:
             assert "--allowed-hosts/--allowed-origins ignored" in caplog.text
 
     @pytest.mark.asyncio
-    async def test_database_url_after_allowed_hosts_not_consumed(self):
+    async def test_database_url_after_allowed_hosts_not_consumed(self, transport: str):
         from postgres_mcp.server import main
         from postgres_mcp.server import mcp
 
         sys.argv = [
             "postgres_mcp",
-            "--transport=sse",
+            f"--transport={transport}",
             "--allowed-hosts",
             "localhost:*,my-gateway:8080",
             "--allowed-origins",
@@ -267,7 +274,7 @@ class TestTransportSecurityIntegration:
 
         with (
             patch("postgres_mcp.server.db_connection.pool_connect", AsyncMock()),
-            patch("postgres_mcp.server.mcp.run_sse_async", AsyncMock()),
+            patch(_TRANSPORT_MOCK_MAP[transport], AsyncMock()),
         ):
             await main()
             assert mcp.settings.transport_security is not None
