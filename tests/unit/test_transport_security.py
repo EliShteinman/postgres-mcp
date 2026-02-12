@@ -129,6 +129,50 @@ class TestTransportSecurityIntegration:
             assert "http://localhost:*" in mcp.settings.transport_security.allowed_origins
 
     @pytest.mark.asyncio
+    async def test_allowed_origins_env_overrides_cli(self, transport: str):
+        from postgres_mcp.server import main
+        from postgres_mcp.server import mcp
+
+        sys.argv = [
+            "postgres_mcp",
+            "postgresql://user:password@localhost/db",
+            f"--transport={transport}",
+            "--allowed-origins",
+            "http://cli-origin:*",
+        ]
+
+        with (
+            patch("postgres_mcp.server.db_connection.pool_connect", AsyncMock()),
+            patch(_TRANSPORT_MOCK_MAP[transport], AsyncMock()),
+            patch.dict("os.environ", {"POSTGRES_MCP_ALLOWED_ORIGINS": "http://env-origin:*"}),
+        ):
+            await main()
+            assert mcp.settings.transport_security is not None
+            assert "http://env-origin:*" in mcp.settings.transport_security.allowed_origins
+            assert "http://cli-origin:*" not in mcp.settings.transport_security.allowed_origins
+
+    @pytest.mark.asyncio
+    async def test_env_protection_true_overrides_cli_disable(self, transport: str):
+        from postgres_mcp.server import main
+        from postgres_mcp.server import mcp
+
+        sys.argv = [
+            "postgres_mcp",
+            "postgresql://user:password@localhost/db",
+            f"--transport={transport}",
+            "--disable-dns-rebinding-protection",
+        ]
+
+        with (
+            patch("postgres_mcp.server.db_connection.pool_connect", AsyncMock()),
+            patch(_TRANSPORT_MOCK_MAP[transport], AsyncMock()),
+            patch.dict("os.environ", {"POSTGRES_MCP_DNS_REBINDING_PROTECTION": "true"}),
+        ):
+            await main()
+            assert mcp.settings.transport_security is not None
+            assert mcp.settings.transport_security.enable_dns_rebinding_protection is True
+
+    @pytest.mark.asyncio
     async def test_default_defers_to_fastmcp(self, transport: str):
         from postgres_mcp.server import main
         from postgres_mcp.server import mcp

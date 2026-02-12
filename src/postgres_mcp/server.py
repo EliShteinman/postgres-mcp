@@ -675,42 +675,30 @@ async def main():
         logger.warning("Signal handling not supported on Windows")
         pass
 
+    # Apply transport security settings (SSE and streamable-http only)
+    if args.transport in ("sse", "streamable-http"):
+        dns_env = os.environ.get("POSTGRES_MCP_DNS_REBINDING_PROTECTION")
+        protection_off = dns_env.lower() in ("false", "0", "no") if dns_env else args.disable_dns_rebinding_protection
+        hosts = os.environ.get("POSTGRES_MCP_ALLOWED_HOSTS") or args.allowed_hosts
+        origins = os.environ.get("POSTGRES_MCP_ALLOWED_ORIGINS") or args.allowed_origins
+
+        if protection_off or hosts or origins:
+            mcp.settings.transport_security = TransportSecuritySettings(
+                enable_dns_rebinding_protection=not protection_off,
+                **{"allowed_hosts": [h.strip() for h in hosts.split(",") if h.strip()]} if hosts else {},
+                **{"allowed_origins": [o.strip() for o in origins.split(",") if o.strip()]} if origins else {},
+            )
+
     # Run the server with the selected transport (always async)
     if args.transport == "stdio":
         await mcp.run_stdio_async()
     elif args.transport == "sse":
         mcp.settings.host = args.sse_host
         mcp.settings.port = args.sse_port
-
-        protection_off = (
-            os.environ.get("POSTGRES_MCP_DNS_REBINDING_PROTECTION", "").lower() in ("false", "0", "no") or args.disable_dns_rebinding_protection
-        )
-        hosts = os.environ.get("POSTGRES_MCP_ALLOWED_HOSTS") or args.allowed_hosts
-        origins = os.environ.get("POSTGRES_MCP_ALLOWED_ORIGINS") or args.allowed_origins
-        if protection_off or hosts or origins:
-            mcp.settings.transport_security = TransportSecuritySettings(
-                enable_dns_rebinding_protection=not protection_off,
-                **{"allowed_hosts": [h.strip() for h in hosts.split(",") if h.strip()]} if hosts else {},
-                **{"allowed_origins": [o.strip() for o in origins.split(",") if o.strip()]} if origins else {},
-            )
-
         await mcp.run_sse_async()
     elif args.transport == "streamable-http":
         mcp.settings.host = args.streamable_http_host
         mcp.settings.port = args.streamable_http_port
-
-        protection_off = (
-            os.environ.get("POSTGRES_MCP_DNS_REBINDING_PROTECTION", "").lower() in ("false", "0", "no") or args.disable_dns_rebinding_protection
-        )
-        hosts = os.environ.get("POSTGRES_MCP_ALLOWED_HOSTS") or args.allowed_hosts
-        origins = os.environ.get("POSTGRES_MCP_ALLOWED_ORIGINS") or args.allowed_origins
-        if protection_off or hosts or origins:
-            mcp.settings.transport_security = TransportSecuritySettings(
-                enable_dns_rebinding_protection=not protection_off,
-                **{"allowed_hosts": [h.strip() for h in hosts.split(",") if h.strip()]} if hosts else {},
-                **{"allowed_origins": [o.strip() for o in origins.split(",") if o.strip()]} if origins else {},
-            )
-
         await mcp.run_streamable_http_async()
 
 
