@@ -283,9 +283,9 @@ You can override it using CLI flags or environment variables (env vars take prec
 
 | CLI Flag | Environment Variable | Description |
 |----------|---------------------|-------------|
-| `--disable-dns-rebinding-protection` | `POSTGRES_MCP_DNS_REBINDING_PROTECTION=false` | Disable [DNS rebinding](https://github.com/modelcontextprotocol/python-sdk/blob/main/src/mcp/server/transport_security.py) protection |
-| `--allowed-hosts host1,host2` | `POSTGRES_MCP_ALLOWED_HOSTS=host1,host2` | Accepted Host header values |
-| `--allowed-origins origin1,origin2` | `POSTGRES_MCP_ALLOWED_ORIGINS=origin1,origin2` | Accepted Origin header values |
+| `--disable-dns-rebinding-protection` | `POSTGRES_MCP_DNS_REBINDING_PROTECTION` | [DNS rebinding](https://github.com/modelcontextprotocol/python-sdk/blob/main/src/mcp/server/transport_security.py) protection. Set to `false`/`0`/`no` to disable, `true` to enable |
+| `--allowed-hosts <hosts>` | `POSTGRES_MCP_ALLOWED_HOSTS` | Comma-separated list of accepted Host header values |
+| `--allowed-origins <origins>` | `POSTGRES_MCP_ALLOWED_ORIGINS` | Comma-separated list of accepted Origin header values |
 
 For example, to allow a custom gateway host:
 

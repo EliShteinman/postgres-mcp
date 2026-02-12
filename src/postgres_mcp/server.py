@@ -679,8 +679,8 @@ async def main():
     if args.transport in ("sse", "streamable-http"):
         dns_env = os.environ.get("POSTGRES_MCP_DNS_REBINDING_PROTECTION")
         protection_off = dns_env.lower() in ("false", "0", "no") if dns_env else args.disable_dns_rebinding_protection
-        hosts = os.environ.get("POSTGRES_MCP_ALLOWED_HOSTS") or args.allowed_hosts
-        origins = os.environ.get("POSTGRES_MCP_ALLOWED_ORIGINS") or args.allowed_origins
+        hosts = os.environ.get("POSTGRES_MCP_ALLOWED_HOSTS", args.allowed_hosts)
+        origins = os.environ.get("POSTGRES_MCP_ALLOWED_ORIGINS", args.allowed_origins)
 
         if protection_off or hosts or origins:
             mcp.settings.transport_security = TransportSecuritySettings(
