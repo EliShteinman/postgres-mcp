@@ -284,15 +284,15 @@ You can configure it using CLI flags or environment variables (env vars take pre
 | CLI Flag | Environment Variable | Description |
 |----------|---------------------|-------------|
 | `--disable-dns-rebinding-protection` | `POSTGRES_MCP_DNS_REBINDING_PROTECTION=false` | Disable DNS rebinding protection |
-| `--allowed-hosts host1 host2` | `POSTGRES_MCP_ALLOWED_HOSTS=host1,host2` | Allowed Host header values |
-| `--allowed-origins origin1 origin2` | `POSTGRES_MCP_ALLOWED_ORIGINS=origin1,origin2` | Allowed Origin header values |
+| `--allowed-hosts host1,host2` | `POSTGRES_MCP_ALLOWED_HOSTS=host1,host2` | Allowed Host header values |
+| `--allowed-origins origin1,origin2` | `POSTGRES_MCP_ALLOWED_ORIGINS=origin1,origin2` | Allowed Origin header values |
 
 For example, to allow a custom gateway host:
 
 ```bash
 postgres-mcp --transport=sse \
-  --allowed-hosts 'localhost:*' 'my-gateway:8080' \
-  --allowed-origins 'http://localhost:*' 'http://my-gateway:*' \
+  --allowed-hosts 'localhost:*,my-gateway:8080' \
+  --allowed-origins 'http://localhost:*,http://my-gateway:*' \
   "postgresql://username:password@localhost:5432/dbname"
 ```
 
