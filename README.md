@@ -278,14 +278,14 @@ For Windsurf, the format in `mcp_config.json` is slightly different:
 
 ## Transport Security
 
-When using SSE or Streamable HTTP transports, DNS rebinding protection is enabled by default for localhost.
-You can configure it using CLI flags or environment variables (env vars take precedence over CLI flags).
+When using SSE or Streamable HTTP transports, DNS rebinding protection is handled by the MCP framework by default (enabled for localhost).
+You can override it using CLI flags or environment variables (env vars take precedence over CLI flags).
 
 | CLI Flag | Environment Variable | Description |
 |----------|---------------------|-------------|
-| `--disable-dns-rebinding-protection` | `POSTGRES_MCP_DNS_REBINDING_PROTECTION=false` | Disable DNS rebinding protection |
-| `--allowed-hosts host1,host2` | `POSTGRES_MCP_ALLOWED_HOSTS=host1,host2` | Allowed Host header values |
-| `--allowed-origins origin1,origin2` | `POSTGRES_MCP_ALLOWED_ORIGINS=origin1,origin2` | Allowed Origin header values |
+| `--disable-dns-rebinding-protection` | `POSTGRES_MCP_DNS_REBINDING_PROTECTION=false` | Disable [DNS rebinding](https://github.com/modelcontextprotocol/python-sdk/blob/main/src/mcp/server/transport_security.py) protection |
+| `--allowed-hosts host1,host2` | `POSTGRES_MCP_ALLOWED_HOSTS=host1,host2` | Accepted Host header values |
+| `--allowed-origins origin1,origin2` | `POSTGRES_MCP_ALLOWED_ORIGINS=origin1,origin2` | Accepted Origin header values |
 
 For example, to allow a custom gateway host:
 
