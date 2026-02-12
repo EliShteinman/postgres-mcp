@@ -13,6 +13,7 @@ from typing import Union
 
 import mcp.types as types
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
 from pydantic import Field
 from pydantic import validate_call
@@ -596,8 +597,58 @@ async def main():
         default=8000,
         help="Port for streamable HTTP server (default: 8000)",
     )
+    parser.add_argument(
+        "--disable-dns-rebinding-protection",
+        action="store_true",
+        default=False,
+        help="Disable DNS rebinding protection (not recommended for production)",
+    )
+    parser.add_argument(
+        "--allowed-hosts",
+        type=str,
+        nargs="+",
+        default=None,
+        help="Allowed Host header values for DNS rebinding protection (e.g. 'localhost:*' '127.0.0.1:*')",
+    )
+    parser.add_argument(
+        "--allowed-origins",
+        type=str,
+        nargs="+",
+        default=None,
+        help="Allowed Origin header values for DNS rebinding protection (e.g. 'http://localhost:*')",
+    )
 
     args = parser.parse_args()
+
+    dns_protection_env = os.environ.get("POSTGRES_MCP_DNS_REBINDING_PROTECTION")
+    allowed_hosts_env = os.environ.get("POSTGRES_MCP_ALLOWED_HOSTS")
+    allowed_origins_env = os.environ.get("POSTGRES_MCP_ALLOWED_ORIGINS")
+
+    dns_protection_disabled = (
+        dns_protection_env.lower() == "false" if dns_protection_env is not None
+        else args.disable_dns_rebinding_protection
+    )
+    allowed_hosts: list[str] | None = (
+        [h.strip() for h in allowed_hosts_env.split(",")] if allowed_hosts_env is not None
+        else args.allowed_hosts
+    )
+    allowed_origins: list[str] | None = (
+        [o.strip() for o in allowed_origins_env.split(",")] if allowed_origins_env is not None
+        else args.allowed_origins
+    )
+
+    if dns_protection_disabled:
+        mcp.settings.transport_security = TransportSecuritySettings(
+            enable_dns_rebinding_protection=False,
+        )
+        logger.info("DNS rebinding protection is disabled")
+    elif allowed_hosts is not None or allowed_origins is not None:
+        mcp.settings.transport_security = TransportSecuritySettings(
+            enable_dns_rebinding_protection=True,
+            allowed_hosts=allowed_hosts or [],
+            allowed_origins=allowed_origins or [],
+        )
+        logger.info(f"DNS rebinding protection enabled with allowed_hosts={allowed_hosts}, allowed_origins={allowed_origins}")
 
     # Store the access mode in the global variable
     global current_access_mode
