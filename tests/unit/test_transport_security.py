@@ -56,7 +56,7 @@ class TestTransportSecurityIntegration:
         with (
             patch("postgres_mcp.server.db_connection.pool_connect", AsyncMock()),
             patch(_TRANSPORT_MOCK_MAP[transport], AsyncMock()),
-            patch.dict("os.environ", {"POSTGRES_MCP_DNS_REBINDING_PROTECTION": "false"}),
+            patch.dict("os.environ", {"MCP_DNS_REBINDING_PROTECTION": "false"}),
         ):
             await main()
             assert mcp.settings.transport_security is not None
@@ -100,7 +100,7 @@ class TestTransportSecurityIntegration:
         with (
             patch("postgres_mcp.server.db_connection.pool_connect", AsyncMock()),
             patch(_TRANSPORT_MOCK_MAP[transport], AsyncMock()),
-            patch.dict("os.environ", {"POSTGRES_MCP_ALLOWED_HOSTS": "env-host:*"}),
+            patch.dict("os.environ", {"MCP_ALLOWED_HOSTS": "env-host:*"}),
         ):
             await main()
             assert mcp.settings.transport_security is not None
@@ -144,7 +144,7 @@ class TestTransportSecurityIntegration:
         with (
             patch("postgres_mcp.server.db_connection.pool_connect", AsyncMock()),
             patch(_TRANSPORT_MOCK_MAP[transport], AsyncMock()),
-            patch.dict("os.environ", {"POSTGRES_MCP_ALLOWED_ORIGINS": "http://env-origin:*"}),
+            patch.dict("os.environ", {"MCP_ALLOWED_ORIGINS": "http://env-origin:*"}),
         ):
             await main()
             assert mcp.settings.transport_security is not None
@@ -166,7 +166,7 @@ class TestTransportSecurityIntegration:
         with (
             patch("postgres_mcp.server.db_connection.pool_connect", AsyncMock()),
             patch(_TRANSPORT_MOCK_MAP[transport], AsyncMock()),
-            patch.dict("os.environ", {"POSTGRES_MCP_DNS_REBINDING_PROTECTION": "true"}),
+            patch.dict("os.environ", {"MCP_DNS_REBINDING_PROTECTION": "true"}),
         ):
             await main()
             assert mcp.settings.transport_security is not None
