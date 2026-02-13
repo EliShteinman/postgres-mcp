@@ -227,6 +227,48 @@ Postgres MCP Pro supports multiple *access modes* to give you control over the o
 To use restricted mode, replace `--access-mode=unrestricted` with `--access-mode=restricted` in the configuration examples above.
 
 
+##### Transport Security Configuration
+
+Postgres MCP Pro includes DNS rebinding protection to secure the server against certain types of attacks.
+By default, the server allows connections from common local and Docker hostnames.
+Transport security applies only to network transports (`sse` and `streamable-http`), not `stdio`.
+
+You can customize this behavior using CLI flags or environment variables (env vars take precedence over CLI flags):
+
+| CLI Flag | Environment Variable | Description | Default |
+|---|---|---|---|
+| `--disable-dns-rebinding-protection` | `MCP_ENABLE_DNS_REBINDING_PROTECTION` | Enable/disable DNS rebinding protection | Enabled |
+| `--allowed-hosts` | `MCP_ALLOWED_HOSTS` | Comma-separated allowed host patterns | `localhost:*,127.0.0.1:*,0.0.0.0:*,postgres-mcp-server:*,host.docker.internal:*` |
+| `--allowed-origins` | `MCP_ALLOWED_ORIGINS` | Comma-separated allowed origins | Empty (allows any origin) |
+
+For example, to restrict allowed hosts in your configuration:
+
+```json
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "DATABASE_URI",
+        "-e",
+        "MCP_ALLOWED_HOSTS",
+        "crystaldba/postgres-mcp",
+        "--access-mode=unrestricted"
+      ],
+      "env": {
+        "DATABASE_URI": "postgresql://username:password@localhost:5432/dbname",
+        "MCP_ALLOWED_HOSTS": "localhost:*,myapp.example.com:*"
+      }
+    }
+  }
+}
+```
+
+
 #### Other MCP Clients
 
 Many MCP clients have similar configuration files to Claude Desktop, and you can adapt the examples above to work with the client of your choice.
@@ -274,34 +316,6 @@ For Windsurf, the format in `mcp_config.json` is slightly different:
         }
     }
 }
-```
-
-## Transport Security
-
-When using SSE or Streamable HTTP transports, DNS rebinding protection is handled by the MCP framework by default (enabled for localhost).
-You can override it using CLI flags or environment variables (env vars take precedence over CLI flags).
-
-| CLI Flag | Environment Variable | Description |
-|----------|---------------------|-------------|
-| `--disable-dns-rebinding-protection` | `POSTGRES_MCP_DNS_REBINDING_PROTECTION` | [DNS rebinding](https://github.com/modelcontextprotocol/python-sdk/blob/main/src/mcp/server/transport_security.py) protection. Set to `false`/`0`/`no` to disable, `true` to enable |
-| `--allowed-hosts <hosts>` | `POSTGRES_MCP_ALLOWED_HOSTS` | Comma-separated list of accepted Host header values |
-| `--allowed-origins <origins>` | `POSTGRES_MCP_ALLOWED_ORIGINS` | Comma-separated list of accepted Origin header values |
-
-For example, to allow a custom gateway host:
-
-```bash
-postgres-mcp --transport=sse \
-  --allowed-hosts 'localhost:*,my-gateway:8080' \
-  --allowed-origins 'http://localhost:*,http://my-gateway:*' \
-  "postgresql://username:password@localhost:5432/dbname"
-```
-
-Or using environment variables:
-
-```bash
-POSTGRES_MCP_ALLOWED_HOSTS="localhost:*,my-gateway:8080" \
-POSTGRES_MCP_ALLOWED_ORIGINS="http://localhost:*,http://my-gateway:*" \
-  postgres-mcp --transport=sse "postgresql://username:password@localhost:5432/dbname"
 ```
 
 ## Postgres Extension Installation (Optional)

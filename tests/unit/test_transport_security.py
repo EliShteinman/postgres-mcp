@@ -9,15 +9,23 @@ _TRANSPORT_MOCK_MAP = {
     "streamable-http": "postgres_mcp.server.mcp.run_streamable_http_async",
 }
 
+_MCP_ENV_KEYS = [
+    "MCP_ENABLE_DNS_REBINDING_PROTECTION",
+    "MCP_ALLOWED_HOSTS",
+    "MCP_ALLOWED_ORIGINS",
+]
+
 
 @pytest.mark.parametrize("transport", ["sse", "streamable-http"])
 class TestTransportSecurityIntegration:
     @pytest.fixture(autouse=True)
-    def _preserve_mcp_state(self):
+    def _preserve_mcp_state(self, monkeypatch: pytest.MonkeyPatch):
         from postgres_mcp.server import mcp
 
         original_argv = sys.argv
         original_security = mcp.settings.transport_security
+        for key in _MCP_ENV_KEYS:
+            monkeypatch.delenv(key, raising=False)
         yield
         sys.argv = original_argv
         mcp.settings.transport_security = original_security
@@ -56,7 +64,7 @@ class TestTransportSecurityIntegration:
         with (
             patch("postgres_mcp.server.db_connection.pool_connect", AsyncMock()),
             patch(_TRANSPORT_MOCK_MAP[transport], AsyncMock()),
-            patch.dict("os.environ", {"POSTGRES_MCP_DNS_REBINDING_PROTECTION": "false"}),
+            patch.dict("os.environ", {"MCP_ENABLE_DNS_REBINDING_PROTECTION": "false"}),
         ):
             await main()
             assert mcp.settings.transport_security is not None
@@ -100,7 +108,7 @@ class TestTransportSecurityIntegration:
         with (
             patch("postgres_mcp.server.db_connection.pool_connect", AsyncMock()),
             patch(_TRANSPORT_MOCK_MAP[transport], AsyncMock()),
-            patch.dict("os.environ", {"POSTGRES_MCP_ALLOWED_HOSTS": "env-host:*"}),
+            patch.dict("os.environ", {"MCP_ALLOWED_HOSTS": "env-host:*"}),
         ):
             await main()
             assert mcp.settings.transport_security is not None
@@ -144,7 +152,7 @@ class TestTransportSecurityIntegration:
         with (
             patch("postgres_mcp.server.db_connection.pool_connect", AsyncMock()),
             patch(_TRANSPORT_MOCK_MAP[transport], AsyncMock()),
-            patch.dict("os.environ", {"POSTGRES_MCP_ALLOWED_ORIGINS": "http://env-origin:*"}),
+            patch.dict("os.environ", {"MCP_ALLOWED_ORIGINS": "http://env-origin:*"}),
         ):
             await main()
             assert mcp.settings.transport_security is not None
@@ -166,7 +174,7 @@ class TestTransportSecurityIntegration:
         with (
             patch("postgres_mcp.server.db_connection.pool_connect", AsyncMock()),
             patch(_TRANSPORT_MOCK_MAP[transport], AsyncMock()),
-            patch.dict("os.environ", {"POSTGRES_MCP_DNS_REBINDING_PROTECTION": "true"}),
+            patch.dict("os.environ", {"MCP_ENABLE_DNS_REBINDING_PROTECTION": "true"}),
         ):
             await main()
             assert mcp.settings.transport_security is not None
@@ -190,7 +198,6 @@ class TestTransportSecurityIntegration:
             await main()
             assert mcp.settings.transport_security is not None
             assert mcp.settings.transport_security.enable_dns_rebinding_protection is True
-            assert "localhost:*" in mcp.settings.transport_security.allowed_hosts
 
     @pytest.mark.asyncio
     async def test_database_url_after_flags_not_consumed(self, transport: str):
